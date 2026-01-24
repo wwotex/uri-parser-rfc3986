@@ -7,6 +7,7 @@
 #define CHARS_SUB_DELIMS                "!$&'()*+,;="
 #define CHARS_UNRESERVED_NON_ALNUM      "-._~"
 #define CHARS_REGNAME                   CHARS_UNRESERVED_NON_ALNUM CHARS_SUB_DELIMS
+#define CHARS_IPV_FUTURE                CHARS_UNRESERVED_NON_ALNUM CHARS_SUB_DELIMS ":"
 #define CHARS_PCHAR                     CHARS_UNRESERVED_NON_ALNUM CHARS_SUB_DELIMS ":@"
 #define CHARS_QUERY_FRAGMENT            CHARS_PCHAR "/?"
 

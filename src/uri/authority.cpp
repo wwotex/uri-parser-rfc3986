@@ -12,7 +12,7 @@ void URI::try_consume_userinfo() {
             return;
         }
 
-        if (!try_consume_generic(get_char_lookup_table(CHARS_PCHAR))) {
+        if (!try_consume_generic(get_char_lookup_table(CHARS_PCHAR), true)) {
             break;
         }
     }
@@ -23,7 +23,7 @@ void URI::try_consume_userinfo() {
 
 void URI::consume_reg_name() {
     const std::size_t start = m_curr;
-    while (try_consume_generic(get_char_lookup_table(CHARS_REGNAME)));
+    while (try_consume_generic(get_char_lookup_table(CHARS_REGNAME), true));
 
     encoded_reg_name = std::string_view(uri.data() + start, m_curr - start);
 }

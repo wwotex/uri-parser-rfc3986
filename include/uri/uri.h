@@ -37,7 +37,7 @@ public:
 
     void consume_authority();
 
-    bool try_consume_generic(const std::array<bool, 256> &lookup);
+    bool try_consume_generic(const std::array<bool, 256> &lookup, bool allow_pct);
 
     void consume_path();
 
@@ -54,6 +54,10 @@ public:
     void try_consume_port();
 
     bool try_consume_h16();
+
+    void consume_ipv6();
+
+    bool try_consume_ipvfuture();
 
     bool try_consume_ipv6_vfuture();
 

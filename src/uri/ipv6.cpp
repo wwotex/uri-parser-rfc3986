@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "uri/characters.hpp"
 #include "uri/parse_error.hpp"
 #include "uri/uri.h"
 
@@ -19,12 +20,9 @@ bool URI::try_consume_h16() {
     return true;
 }
 
-bool URI::try_consume_ipv6_vfuture() {
-    if (!try_consume_char('[')) {
-        return false;
-    }
-
+void URI::consume_ipv6() {
     const std::size_t start = m_curr;
+
     int seen_double_colon = 0;
     int left = 8;
     bool can_be_number = true;
@@ -53,11 +51,52 @@ bool URI::try_consume_ipv6_vfuture() {
         throw ParseError("Failed to parse IPv6 address!", m_curr);
     }
 
-    if (!try_consume_char(']')) {
-        throw ParseError("Expected closing square bracket after ipv6 or ipvfuture address!", m_curr);
+    ipv6_address = std::string_view(uri.data() + start, m_curr - start);
+}
+
+bool URI::try_consume_ipvfuture() {
+    const std::size_t start = m_curr;
+
+    if (!try_consume_char('v')) {
+        return false;
     }
 
-    ipv6_address = std::string_view(uri.data() + start, m_curr - start - 1);
+    if (m_curr >= uri.size() || !std::isxdigit(uri[m_curr])) {
+        return false;
+    }
+
+    m_curr++;
+
+    if (!try_consume_char('.')) {
+        m_curr = start;
+        return false;
+    }
+
+    if (!try_consume_generic(get_char_lookup_table(CHARS_IPV_FUTURE), false)) {
+        m_curr = start;
+        return false;
+    }
+
+    while (try_consume_generic(get_char_lookup_table(CHARS_IPV_FUTURE), false));
+
+    ipvfuture_address = std::string_view(uri.data() + start, m_curr - start);
+    return true;
+}
+
+bool URI::try_consume_ipv6_vfuture() {
+    if (!try_consume_char('[')) {
+        return false;
+    }
+
+    if (!try_consume_ipvfuture()) {
+        consume_ipv6();
+    }
+
+    if (!try_consume_char(']')) {
+        ipv6_address = "";
+        ipvfuture_address = "";
+        throw ParseError("Expected closing square bracket after ipv6 or ipvfuture address!", m_curr);
+    }
 
     return true;
 }

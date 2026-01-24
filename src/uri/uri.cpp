@@ -50,7 +50,7 @@ void URI::parse_scheme() {
     scheme = std::string_view(uri.data() + start, m_curr - start);
 }
 
-bool URI::try_consume_generic(const std::array<bool, 256> &lookup) {
+bool URI::try_consume_generic(const std::array<bool, 256> &lookup, const bool allow_pct) {
     if (m_curr >= uri.size()) {
         return false;
     }
@@ -61,7 +61,7 @@ bool URI::try_consume_generic(const std::array<bool, 256> &lookup) {
     }
 
     // TODO: add PCT-decoded paths
-    if (try_consume_char('%')) {
+    if (allow_pct && try_consume_char('%')) {
         consume_or_throw([](const char c) { return std::isxdigit(c); }, "Hexadecimal digit required after %");
         consume_or_throw([](const char c) { return std::isxdigit(c); }, "Hexadecimal digit required after %");
         return true;
@@ -84,7 +84,7 @@ void URI::consume_path() {
             continue;
         }
 
-        if (try_consume_generic(get_char_lookup_table(CHARS_PCHAR))) {
+        if (try_consume_generic(get_char_lookup_table(CHARS_PCHAR), true)) {
             continue;
         }
 
@@ -108,7 +108,7 @@ void URI::consume_query_or_fragment(bool is_query) {
     std::size_t entity_start = m_curr;
 
     while (m_curr < uri.size()) {
-        if (!try_consume_generic(get_char_lookup_table(CHARS_QUERY_FRAGMENT))) {
+        if (!try_consume_generic(get_char_lookup_table(CHARS_QUERY_FRAGMENT), true)) {
             break;
         }
     }
@@ -131,6 +131,7 @@ URI::URI(const std::string_view uri) : uri{uri} {
         // hier-part
         if (try_consume_double_slash()) {
             // authority path-abempty
+
             consume_authority();
             consume_path();
         } else {
