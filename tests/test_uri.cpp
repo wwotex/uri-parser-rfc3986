@@ -1,6 +1,8 @@
 #include <cassert>
 #include <iostream>
-#include "uri.h"
+
+#include "test_ipv6.hpp"
+#include "uri/uri.h"
 
 void test_scheme() {
     {
@@ -35,9 +37,23 @@ void test_scheme() {
     }
 }
 
+void test_authority() {
+    {
+        const auto uri = URI("https://git@mambo.com:123/path");
+        assert(!uri.has_error);
+        assert(uri.scheme == "https");
+        assert(uri.encoded_authority == "git@mambo.com:123");
+        assert(uri.encoded_userinfo == "git");
+        assert(uri.encoded_reg_name == "mambo.com");
+        assert(uri.port == "123");
+        assert(uri.encoded_path == "/path");
+    }
+}
 
 int main() {
     test_scheme();
+    test_authority();
+    test_ipv6();
 
     std::cout << "All tests PASSED! \n\n";
 }

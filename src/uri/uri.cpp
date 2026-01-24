@@ -1,13 +1,11 @@
-#include <cassert>
 #include <iostream>
 #include <array>
 #include <functional>
 #include <string_view>
 
-#include "../include/uri.h"
-
-#include "../include/characters.hpp"
-#include "../include/parse_error.hpp"
+#include "uri/uri.h"
+#include "uri/characters.hpp"
+#include "uri/parse_error.hpp"
 
 void URI::consume_or_throw(const std::function<bool(char)> &is_char_valid, const std::string &error_msg) {
     if (m_curr >= uri.size() || !is_char_valid(uri[m_curr])) {
@@ -125,10 +123,7 @@ void URI::consume_query_or_fragment(bool is_query) {
 
 URI::URI(const std::string_view uri) : uri{uri} {
     try {
-        // scheme
         parse_scheme();
-
-        // :
         if (!try_consume_char(':')) {
             throw ParseError("Required colon character!", m_curr);
         }
@@ -136,14 +131,17 @@ URI::URI(const std::string_view uri) : uri{uri} {
         // hier-part
         if (try_consume_double_slash()) {
             // authority path-abempty
-            parse_authority();
+            consume_authority();
+            consume_path();
         } else {
             consume_path();
             // path-absolute / path-rootless / path-empty
         }
 
+        // query and fragment
         consume_query_or_fragment(true);
         consume_query_or_fragment(false);
+
         if (m_curr < uri.size()) {
             throw ParseError("Invalid character after parsing all elements", m_curr);
         }

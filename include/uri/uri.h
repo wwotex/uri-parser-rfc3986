@@ -35,7 +35,7 @@ public:
 
     void parse_scheme();
 
-    void parse_authority();
+    void consume_authority();
 
     bool try_consume_generic(const std::array<bool, 256> &lookup);
 
@@ -43,13 +43,19 @@ public:
 
     void consume_query_or_fragment(bool is_query);
 
-    bool parse_dec_octet();
+    bool try_consume_dec_octet();
 
-    void try_consume_ipv4();
+    bool try_consume_ipv4();
 
     void try_consume_userinfo();
 
     void consume_reg_name();
+
+    void try_consume_port();
+
+    bool try_consume_h16();
+
+    bool try_consume_ipv6_vfuture();
 
     explicit URI(std::string_view uri);
 };

@@ -1,8 +1,8 @@
 #include <iostream>
-#include "../include/uri.h"
+#include "uri/uri.h"
 
 
-bool URI::parse_dec_octet() {
+bool URI::try_consume_dec_octet() {
     int value = 0;
     if (m_curr >= uri.size() || !std::isdigit(uri[m_curr])) {
         return false;
@@ -29,16 +29,22 @@ bool URI::parse_dec_octet() {
     return true;
 }
 
-void URI::try_consume_ipv4() {
+bool URI::try_consume_ipv4() {
     const std::size_t start = m_curr;
 
-    bool still_possible = parse_dec_octet();
+    bool still_possible = try_consume_dec_octet();
     still_possible = still_possible && try_consume_char('.');
-    still_possible = still_possible && parse_dec_octet();
+    still_possible = still_possible && try_consume_dec_octet();
     still_possible = still_possible && try_consume_char('.');
-    still_possible = still_possible && parse_dec_octet();
+    still_possible = still_possible && try_consume_dec_octet();
     still_possible = still_possible && try_consume_char('.');
-    still_possible = still_possible && parse_dec_octet();
+    still_possible = still_possible && try_consume_dec_octet();
 
-    m_curr = still_possible ? m_curr : start;
+    if (still_possible) {
+        ipv4_address = std::string_view(uri.data() + start, m_curr - start);
+    } else {
+        m_curr = start;
+    }
+
+    return still_possible;
 }
