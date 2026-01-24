@@ -54,6 +54,7 @@ int main() {
     test_scheme();
     test_authority();
     test_ipv6();
+    test_ipvfuture();
 
     std::cout << "All tests PASSED! \n\n";
 }

@@ -76,6 +76,7 @@ inline void test_ipv6() {
         const auto uri = URI("s://[::2001]");
         assert(!uri.has_error);
         assert(uri.ipv6_address == "::2001");
+        assert(uri.ipvfuture_address == "");
     }
     {
         // With port
@@ -142,5 +143,29 @@ inline void test_ipv6() {
         const auto uri = URI("s://[::gggg]");
         assert(uri.has_error);
         assert(uri.ipv6_address == "");
+    }
+}
+
+inline void test_ipvfuture() {
+    {
+        // IPvFuture literal: version v1 with "fe80"
+        const auto uri = URI("https://[v1.fe80]/path");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "");
+        assert(uri.ipvfuture_address == "v1.fe80");
+    }
+    {
+        // IPvFuture with colon in address part and a port
+        const auto uri = URI("https://[v2.alpha-1:beta]:443/path");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "");
+        assert(uri.ipvfuture_address == "v2.alpha-1:beta");
+    }
+    {
+        // IPvFuture with sub-delims (+ and -) and userinfo
+        const auto uri = URI("https://git@[vF.f00-bar+baz]/resource");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "");
+        assert(uri.ipvfuture_address == "vF.f00-bar+baz");
     }
 }
