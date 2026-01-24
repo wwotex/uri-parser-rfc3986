@@ -31,7 +31,7 @@ void URI::consume_ipv6() {
         if (can_be_colon && try_consume_char(':')) {
             if (!seen_double_colon && try_consume_char(':')) {
                 seen_double_colon = 1;
-            } else if (can_be_number || !std::isxdigit(uri[m_curr])) {
+            } else if (can_be_number || (m_curr < uri.size() && !std::isxdigit(uri[m_curr]))) {
                 throw ParseError("Single colon at the start or end of an IPv6 address not allowed!", m_curr);
             }
 
