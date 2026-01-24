@@ -51,4 +51,7 @@ int main() {
     test_uri("https:/www/abc/sdf/er?mambo=makaren%65123#xxxxx/xx/x//x?????");
     test_uri("https:/www/abc/sdf/er?mambo=makaren%65123#xxxxx/xx/x//x?????#####");
     test_uri("https://123.0.99.255here_is_a_funny_domain_name.com/this/is/the/path");
+
+    // no host
+    test_uri("https://git@:22/this/is/a/path");
 }

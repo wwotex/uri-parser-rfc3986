@@ -4,16 +4,10 @@
 #include <functional>
 #include <string_view>
 
-#include "uri.h"
-#include "parse_error.hpp"
+#include "../include/uri.h"
 
-constexpr std::array<bool, 256> get_char_lookup_table(std::string_view characters) {
-    std::array<bool, 256> table = {};
-    for (const char &c: characters) {
-        table[c] = true;
-    }
-    return table;
-}
+#include "../include/characters.hpp"
+#include "../include/parse_error.hpp"
 
 void URI::consume_or_throw(const std::function<bool(char)> &is_char_valid, const std::string &error_msg) {
     if (m_curr >= uri.size() || !is_char_valid(uri[m_curr])) {
@@ -58,13 +52,10 @@ void URI::parse_scheme() {
     scheme = std::string_view(uri.data() + start, m_curr - start);
 }
 
-void URI::parse_authority() {
-    std::cout << "UNIMPLEMENTED PARSING AUTHORITY" << std::endl; //TODO: UNIMPLEMENTED
-    // [ userinfo "@" ] host [ ":" port ]
-}
-
-bool URI::try_consume_char_from_set(const std::array<bool, 256> &lookup) {
-    assert(m_curr < uri.size());
+bool URI::try_consume_generic(const std::array<bool, 256> &lookup) {
+    if (m_curr >= uri.size()) {
+        return false;
+    }
 
     if (std::isalnum(uri[m_curr]) || lookup[uri[m_curr]]) {
         m_curr++;
@@ -95,7 +86,7 @@ void URI::consume_path() {
             continue;
         }
 
-        if (try_consume_char_from_set(get_char_lookup_table(CHARS_PCHAR))) {
+        if (try_consume_generic(get_char_lookup_table(CHARS_PCHAR))) {
             continue;
         }
 
@@ -119,7 +110,7 @@ void URI::consume_query_or_fragment(bool is_query) {
     std::size_t entity_start = m_curr;
 
     while (m_curr < uri.size()) {
-        if (!try_consume_char_from_set(get_char_lookup_table(CHARS_QUERY_FRAGMENT))) {
+        if (!try_consume_generic(get_char_lookup_table(CHARS_QUERY_FRAGMENT))) {
             break;
         }
     }
