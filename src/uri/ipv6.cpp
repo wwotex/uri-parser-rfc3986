@@ -40,7 +40,7 @@ void URI::consume_ipv6() {
             continue;
         }
 
-        if (can_be_number && try_consume_ipv4()) {
+        if (can_be_number && left >= 2 && try_consume_ipv4()) {
             ipv4_address = "";
             left -= 2;
             break;
@@ -58,10 +58,6 @@ void URI::consume_ipv6() {
 
     if (left > 0 && !seen_double_colon) {
         throw ParseError("Failed to parse IPv6 address!", m_curr);
-    }
-
-    if (left < 0) {
-        throw ParseError("Too many hextets in the IPv6 address!", m_curr);
     }
 
     ipv6_address = std::string_view(uri.data() + start, m_curr - start);

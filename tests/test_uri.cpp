@@ -57,5 +57,5 @@ int main() {
     test_ipv6_with_ipv4_ext();
     test_ipvfuture();
 
-    std::cout << "All tests PASSED! \n\n";
+    std::cerr << "All tests PASSED! \n\n";
 }
