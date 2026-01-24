@@ -3,6 +3,16 @@
 
 inline void test_ipv6() {
     {
+        const auto uri = URI("s://[1::2:]");
+        assert(uri.has_error);
+        assert(uri.ipv6_address == "");
+    }
+    {
+        const auto uri = URI("s://[:12::1]");
+        assert(uri.has_error);
+        assert(uri.ipv6_address == "");
+    }
+    {
         const auto uri = URI("s://[::]");
         assert(!uri.has_error);
         assert(uri.ipv6_address == "::");
@@ -141,6 +151,40 @@ inline void test_ipv6() {
     }
     {
         const auto uri = URI("s://[::gggg]");
+        assert(uri.has_error);
+        assert(uri.ipv6_address == "");
+    }
+}
+
+inline void test_ipv6_with_ipv4_ext() {
+    {
+        const auto uri = URI("s://[::ffff:192.168.0.1]");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "::ffff:192.168.0.1");
+    }
+    {
+        const auto uri = URI("s://[2001:db8::192.0.2.33]");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "2001:db8::192.0.2.33");
+    }
+    {
+        const auto uri = URI("s://[64:ff9b::203.0.113.5]");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "64:ff9b::203.0.113.5");
+    }
+    {
+        const auto uri = URI("s://[2001:db8:abcd:1234::10.1.2.3]");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "2001:db8:abcd:1234::10.1.2.3");
+    }
+    {
+        const auto uri = URI("s://[::ffff:255.255.255.255]");
+        assert(!uri.has_error);
+        assert(uri.ipv6_address == "::ffff:255.255.255.255");
+    }
+    // too long
+    {
+        const auto uri = URI("s://[1:2:3:4:5:6:7:1.2.3.4]");
         assert(uri.has_error);
         assert(uri.ipv6_address == "");
     }

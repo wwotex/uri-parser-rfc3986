@@ -31,11 +31,19 @@ void URI::consume_ipv6() {
         if (can_be_colon && try_consume_char(':')) {
             if (!seen_double_colon && try_consume_char(':')) {
                 seen_double_colon = 1;
+            } else if (can_be_number || !std::isxdigit(uri[m_curr])) {
+                throw ParseError("Single colon at the start or end of an IPv6 address not allowed!", m_curr);
             }
 
             can_be_colon = false;
             can_be_number = true;
             continue;
+        }
+
+        if (can_be_number && try_consume_ipv4()) {
+            ipv4_address = "";
+            left -= 2;
+            break;
         }
 
         if (can_be_number && try_consume_h16()) {
@@ -47,8 +55,13 @@ void URI::consume_ipv6() {
 
         break;
     }
+
     if (left > 0 && !seen_double_colon) {
         throw ParseError("Failed to parse IPv6 address!", m_curr);
+    }
+
+    if (left < 0) {
+        throw ParseError("Too many hextets in the IPv6 address!", m_curr);
     }
 
     ipv6_address = std::string_view(uri.data() + start, m_curr - start);
