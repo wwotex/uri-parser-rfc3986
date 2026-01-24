@@ -7,6 +7,13 @@ inline void test_ipv6() {
         assert(uri.has_error);
         assert(uri.ipv6_address == "");
     }
+
+    {
+        const auto uri = URI("s://[2001:db8:]");
+        assert(uri.has_error);
+        assert(uri.ipv6_address == "");
+    }
+
     {
         const auto uri = URI("s://[:12::1]");
         assert(uri.has_error);
