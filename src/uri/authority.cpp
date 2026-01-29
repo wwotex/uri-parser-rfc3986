@@ -6,9 +6,9 @@
 void URI::try_consume_userinfo() {
     const std::size_t start = m_curr;
 
-    while (m_curr < uri.size()) {
+    while (m_curr < m_uri.size()) {
         if (try_consume_char('@')) {
-            encoded_userinfo = std::string_view(uri.data() + start, m_curr - start - 1);
+            encoded_userinfo = std::string_view(m_uri.data() + start, m_curr - start - 1);
             return;
         }
 
@@ -25,7 +25,7 @@ void URI::consume_reg_name() {
     const std::size_t start = m_curr;
     while (try_consume_generic(get_char_lookup_table(CHARS_REGNAME), true));
 
-    encoded_reg_name = std::string_view(uri.data() + start, m_curr - start);
+    encoded_reg_name = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
 void URI::try_consume_port() {
@@ -35,11 +35,11 @@ void URI::try_consume_port() {
 
     const std::size_t start = m_curr;
 
-    while (m_curr < uri.size() && std::isdigit(uri[m_curr])) {
+    while (m_curr < m_uri.size() && std::isdigit(m_uri[m_curr])) {
         m_curr++;
     }
 
-    port = std::string_view(uri.data() + start, m_curr - start);
+    port = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
 void URI::consume_authority() {
@@ -53,5 +53,5 @@ void URI::consume_authority() {
 
     try_consume_port();
 
-    encoded_authority = std::string_view(uri.data() + start, m_curr - start);
+    encoded_authority = std::string_view(m_uri.data() + start, m_curr - start);
 }

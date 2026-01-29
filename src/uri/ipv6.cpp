@@ -5,13 +5,13 @@
 #include "uri/uri.h"
 
 bool URI::try_consume_h16() {
-    if (m_curr > uri.size() || !std::isxdigit(uri[m_curr])) {
+    if (m_curr > m_uri.size() || !std::isxdigit(m_uri[m_curr])) {
         return false;
     }
     m_curr++;
 
     for (int i = 0; i < 3; i++) {
-        if (m_curr > uri.size() || !std::isxdigit(uri[m_curr])) {
+        if (m_curr > m_uri.size() || !std::isxdigit(m_uri[m_curr])) {
             return true;
         }
         m_curr++;
@@ -27,11 +27,11 @@ void URI::consume_ipv6() {
     int left = 8;
     bool can_be_number = true;
     bool can_be_colon = true;
-    while (m_curr < uri.size() && (left - seen_double_colon) > 0) {
+    while (m_curr < m_uri.size() && (left - seen_double_colon) > 0) {
         if (can_be_colon && try_consume_char(':')) {
             if (!seen_double_colon && try_consume_char(':')) {
                 seen_double_colon = 1;
-            } else if (can_be_number || (m_curr < uri.size() && !std::isxdigit(uri[m_curr]))) {
+            } else if (can_be_number || (m_curr < m_uri.size() && !std::isxdigit(m_uri[m_curr]))) {
                 throw ParseError("Single colon at the start or end of an IPv6 address not allowed!", m_curr);
             }
 
@@ -60,7 +60,7 @@ void URI::consume_ipv6() {
         throw ParseError("Failed to parse IPv6 address!", m_curr);
     }
 
-    ipv6_address = std::string_view(uri.data() + start, m_curr - start);
+    ipv6_address = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
 bool URI::try_consume_ipvfuture() {
@@ -70,7 +70,7 @@ bool URI::try_consume_ipvfuture() {
         return false;
     }
 
-    if (m_curr >= uri.size() || !std::isxdigit(uri[m_curr])) {
+    if (m_curr >= m_uri.size() || !std::isxdigit(m_uri[m_curr])) {
         return false;
     }
 
@@ -88,7 +88,7 @@ bool URI::try_consume_ipvfuture() {
 
     while (try_consume_generic(get_char_lookup_table(CHARS_IPV_FUTURE), false));
 
-    ipvfuture_address = std::string_view(uri.data() + start, m_curr - start);
+    ipvfuture_address = std::string_view(m_uri.data() + start, m_curr - start);
     return true;
 }
 

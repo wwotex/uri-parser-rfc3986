@@ -4,11 +4,15 @@
 #include <string_view>
 
 #include "uri/uri.h"
+
+#include <charconv>
+#include <optional>
+
 #include "uri/characters.hpp"
 #include "uri/parse_error.hpp"
 
 void URI::consume_or_throw(const std::function<bool(char)> &is_char_valid, const std::string &error_msg) {
-    if (m_curr >= uri.size() || !is_char_valid(uri[m_curr])) {
+    if (m_curr >= m_uri.size() || !is_char_valid(m_uri[m_curr])) {
         throw ParseError(error_msg, m_curr);
     }
 
@@ -16,7 +20,7 @@ void URI::consume_or_throw(const std::function<bool(char)> &is_char_valid, const
 }
 
 bool URI::try_consume_char(const char required) {
-    if (uri[m_curr] != required) {
+    if (m_uri[m_curr] != required) {
         return false;
     }
 
@@ -26,7 +30,7 @@ bool URI::try_consume_char(const char required) {
 
 
 bool URI::try_consume_double_slash() {
-    if (m_curr + 1 >= uri.size() || uri[m_curr] != '/' || uri[m_curr + 1] != '/') {
+    if (m_curr + 1 >= m_uri.size() || m_uri[m_curr] != '/' || m_uri[m_curr + 1] != '/') {
         return false;
     }
 
@@ -43,31 +47,45 @@ void URI::parse_scheme() {
         return std::isalnum(tested) || get_char_lookup_table(CHARS_SCHEME_NON_ALNUM)[tested];
     };
 
-    while (m_curr < uri.size() && is_valid_scheme_char(uri[m_curr])) {
+    while (m_curr < m_uri.size() && is_valid_scheme_char(m_uri[m_curr])) {
         m_curr++;
     }
 
-    scheme = std::string_view(uri.data() + start, m_curr - start);
+    scheme = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
-bool URI::try_consume_generic(const std::array<bool, 256> &lookup, const bool allow_pct) {
-    if (m_curr >= uri.size()) {
-        return false;
+char URI::get_pct_decoded_char(const char *pos) const {
+    char value = 0;
+    auto [ptr, ec] = std::from_chars(pos, pos + 2, value, 16);
+
+    // Check if parsing succeeded and consumed exactly 2 chars
+    if (ec != std::errc() || ptr != pos + 2) {
+        throw ParseError("Failed to parse PCT encoded char", m_curr);
     }
 
-    if (std::isalnum(uri[m_curr]) || lookup[uri[m_curr]]) {
+    return value;
+}
+
+std::optional<char> URI::try_consume_generic(const std::array<bool, 256> &lookup, const bool allow_pct) {
+    if (m_curr >= m_uri.size()) {
+        return std::nullopt;
+    }
+
+    if (std::isalnum(m_uri[m_curr]) || lookup[m_uri[m_curr]]) {
         m_curr++;
-        return true;
+        return m_uri[m_curr - 1];
     }
 
     // TODO: add PCT-decoded paths
     if (allow_pct && try_consume_char('%')) {
         consume_or_throw([](const char c) { return std::isxdigit(c); }, "Hexadecimal digit required after %");
         consume_or_throw([](const char c) { return std::isxdigit(c); }, "Hexadecimal digit required after %");
-        return true;
+
+        auto res = get_pct_decoded_char(m_uri.data() + m_curr - 2);
+        return res;
     }
 
-    return false;
+    return std::nullopt;
 }
 
 void URI::consume_path() {
@@ -75,10 +93,10 @@ void URI::consume_path() {
     std::size_t segment_start = m_curr;
     std::vector<std::string_view> segments;
 
-    while (m_curr < uri.size()) {
+    while (m_curr < m_uri.size()) {
         if (try_consume_char('/')) {
             if (m_curr - segment_start - 1 > 0) {
-                segments.emplace_back(uri.data() + segment_start, m_curr - segment_start - 1);
+                segments.emplace_back(m_uri.data() + segment_start, m_curr - segment_start - 1);
             }
             segment_start = m_curr;
             continue;
@@ -92,36 +110,42 @@ void URI::consume_path() {
     }
 
     if (m_curr - segment_start > 0) {
-        segments.emplace_back(uri.data() + segment_start, m_curr - segment_start);
+        segments.emplace_back(m_uri.data() + segment_start, m_curr - segment_start);
     }
 
-    encoded_path = std::string_view(uri.data() + path_start, m_curr - path_start);
+    encoded_path = std::string_view(m_uri.data() + path_start, m_curr - path_start);
     encoded_segments = std::move(segments);
 }
 
 void URI::consume_query_or_fragment(bool is_query) {
     const char separator = is_query ? '?' : '#';
-    if (m_curr >= uri.size() || !try_consume_char(separator)) {
+    if (m_curr >= m_uri.size() || !try_consume_char(separator)) {
         return;
     }
 
     std::size_t entity_start = m_curr;
 
-    while (m_curr < uri.size()) {
-        if (!try_consume_generic(get_char_lookup_table(CHARS_QUERY_FRAGMENT), true)) {
+    std::string decoded_string;
+    while (m_curr < m_uri.size()) {
+        auto decoded_char = try_consume_generic(get_char_lookup_table(CHARS_QUERY_FRAGMENT), true);
+        if (!decoded_char.has_value()) {
             break;
         }
+
+        decoded_string.push_back(decoded_char.value());
     }
 
-    std::string_view temp = std::string_view(uri.data() + entity_start, m_curr - entity_start);
+    std::string_view temp = std::string_view(m_uri.data() + entity_start, m_curr - entity_start);
     if (is_query) {
         encoded_query = temp;
+        m_query = decoded_string;
     } else {
         encoded_fragment = temp;
+        m_fragment = decoded_string;
     }
 }
 
-URI::URI(const std::string_view uri) : uri{uri} {
+URI::URI(const std::string_view uri) : m_uri{uri} {
     try {
         parse_scheme();
         if (!try_consume_char(':')) {
@@ -147,7 +171,7 @@ URI::URI(const std::string_view uri) : uri{uri} {
             throw ParseError("Invalid character after parsing all elements", m_curr);
         }
     } catch (const ParseError &e) {
-        std::cerr << "Parsing error: " << e.what();
+        std::cout << "Parsing error: " << e.what();
         has_error = true;
     }
 }
