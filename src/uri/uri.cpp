@@ -51,7 +51,7 @@ void URI::parse_scheme() {
         m_curr++;
     }
 
-    scheme = std::string_view(m_uri.data() + start, m_curr - start);
+    m_scheme = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
 char URI::get_pct_decoded_char(const char *pos) const {
@@ -92,17 +92,25 @@ void URI::consume_path() {
     std::size_t path_start = m_curr;
     std::size_t segment_start = m_curr;
     std::vector<std::string_view> segments;
+    std::vector<std::string> decoded_segments;
+    std::string temp_decoded_seg;
+    std::string temp_decoded_path;
 
     while (m_curr < m_uri.size()) {
         if (try_consume_char('/')) {
             if (m_curr - segment_start - 1 > 0) {
                 segments.emplace_back(m_uri.data() + segment_start, m_curr - segment_start - 1);
+                temp_decoded_path += temp_decoded_seg;
+                decoded_segments.push_back(std::move(temp_decoded_seg));
             }
             segment_start = m_curr;
+            temp_decoded_path.push_back('/');
             continue;
         }
 
-        if (try_consume_generic(get_char_lookup_table(CHARS_PCHAR), true)) {
+        auto decoded_char = try_consume_generic(get_char_lookup_table(CHARS_PCHAR), true);
+        if (decoded_char.has_value()) {
+            temp_decoded_seg.push_back(decoded_char.value());
             continue;
         }
 
@@ -111,10 +119,15 @@ void URI::consume_path() {
 
     if (m_curr - segment_start > 0) {
         segments.emplace_back(m_uri.data() + segment_start, m_curr - segment_start);
+        temp_decoded_path += temp_decoded_seg;
+        decoded_segments.push_back(std::move(temp_decoded_seg));
     }
 
-    encoded_path = std::string_view(m_uri.data() + path_start, m_curr - path_start);
-    encoded_segments = std::move(segments);
+    m_encoded_path = std::string_view(m_uri.data() + path_start, m_curr - path_start);
+    m_path = std::move(temp_decoded_path);
+
+    m_encoded_segments = std::move(segments);
+    m_segments = std::move(decoded_segments);
 }
 
 void URI::consume_query_or_fragment(bool is_query) {
@@ -137,11 +150,11 @@ void URI::consume_query_or_fragment(bool is_query) {
 
     std::string_view temp = std::string_view(m_uri.data() + entity_start, m_curr - entity_start);
     if (is_query) {
-        encoded_query = temp;
-        m_query = decoded_string;
+        m_encoded_query = temp;
+        m_query = std::move(decoded_string);
     } else {
-        encoded_fragment = temp;
-        m_fragment = decoded_string;
+        m_encoded_fragment = temp;
+        m_fragment = std::move(decoded_string);
     }
 }
 
@@ -154,13 +167,10 @@ URI::URI(const std::string_view uri) : m_uri{uri} {
 
         // hier-part
         if (try_consume_double_slash()) {
-            // authority path-abempty
-
             consume_authority();
             consume_path();
         } else {
             consume_path();
-            // path-absolute / path-rootless / path-empty
         }
 
         // query and fragment
@@ -172,6 +182,6 @@ URI::URI(const std::string_view uri) : m_uri{uri} {
         }
     } catch (const ParseError &e) {
         std::cout << "Parsing error: " << e.what();
-        has_error = true;
+        m_has_error = true;
     }
 }

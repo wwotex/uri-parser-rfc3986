@@ -41,7 +41,7 @@ void URI::consume_ipv6() {
         }
 
         if (can_be_number && left >= 2 && try_consume_ipv4()) {
-            ipv4_address = "";
+            m_ipv4_address = "";
             left -= 2;
             break;
         }
@@ -60,7 +60,7 @@ void URI::consume_ipv6() {
         throw ParseError("Failed to parse IPv6 address!", m_curr);
     }
 
-    ipv6_address = std::string_view(m_uri.data() + start, m_curr - start);
+    m_ipv6_address = std::string_view(m_uri.data() + start, m_curr - start);
 }
 
 bool URI::try_consume_ipvfuture() {
@@ -88,7 +88,7 @@ bool URI::try_consume_ipvfuture() {
 
     while (try_consume_generic(get_char_lookup_table(CHARS_IPV_FUTURE), false));
 
-    ipvfuture_address = std::string_view(m_uri.data() + start, m_curr - start);
+    m_ipvfuture_address = std::string_view(m_uri.data() + start, m_curr - start);
     return true;
 }
 
@@ -102,8 +102,8 @@ bool URI::try_consume_ipv6_vfuture() {
     }
 
     if (!try_consume_char(']')) {
-        ipv6_address = "";
-        ipvfuture_address = "";
+        m_ipv6_address = "";
+        m_ipvfuture_address = "";
         throw ParseError("Expected closing square bracket after ipv6 or ipvfuture address!", m_curr);
     }
 

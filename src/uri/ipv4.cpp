@@ -41,7 +41,7 @@ bool URI::try_consume_ipv4() {
     still_possible = still_possible && try_consume_dec_octet();
 
     if (still_possible) {
-        ipv4_address = std::string_view(m_uri.data() + start, m_curr - start);
+        m_ipv4_address = std::string_view(m_uri.data() + start, m_curr - start);
     } else {
         m_curr = start;
     }
