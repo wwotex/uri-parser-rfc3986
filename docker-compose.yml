@@ -1,0 +1,23 @@
+x-common: &common
+    build:
+      context: .
+      dockerfile: cmake.Dockerfile
+
+services:
+  uri_parser:
+    build:
+      context: .
+      dockerfile: cmake.Dockerfile
+      args:
+        TARGET: main
+    working_dir: /home/src
+    entrypoint: /home/build/main
+
+  tests_uri_parser:
+    build:
+      context: .
+      dockerfile: cmake.Dockerfile
+      args:
+        TARGET: test_uri
+    working_dir: /home/src
+    entrypoint: /home/build/test_uri

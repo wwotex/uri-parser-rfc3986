@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.25)
 project(uri_parser)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -21,13 +21,13 @@ add_executable(test_uri
         ${URI_SOURCE_FILES}
 )
 
-add_executable(test_boost
-        tests/test_boost.cpp
-)
+# add_executable(test_boost
+#         tests/test_boost.cpp
+# )
+
+# find_package(Boost 1.81.0 COMPONENTS url QUIET)
+# target_link_libraries(test_boost PRIVATE Boost::url)
 
 target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(test_uri PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(test_boost PRIVATE ${CMAKE_SOURCE_DIR}/include)
-
-find_package(Boost 1.81.0 REQUIRED COMPONENTS url)
-target_link_libraries(test_boost PRIVATE Boost::url)
+# target_include_directories(test_boost PRIVATE ${CMAKE_SOURCE_DIR}/include)
